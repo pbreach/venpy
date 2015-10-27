@@ -34,7 +34,7 @@ Due to the dependence on Vensim's DLL functionality there comes a set of limitat
 
 ##Applications
 
-Although these limitations do exist, the Vensim DLL has been used in many successful applications to extend Vensim Functionality. Some of these include the works of:
+Although these limitations do exist, the Vensim DLL has been used in many successful applications to extend Vensim functionality. Some of these include the works of:
 
    [Peck, A., Neuwirth, C., Simonovic, S.P. (2014). "Coupling System Dynamics with Geographic Information Systems". Water Resources Research Report no.086, Facility for Intelligent Decision Support, Department of Civil and Environmental Engineering, London, Ontario, Canada, 81 pages. ISBN (print) 978-0-7714-3067-1; (online) 978-0-7714-3068-8.](http://www.eng.uwo.ca/research/iclr/fids/publications/products/86.pdf)
 
