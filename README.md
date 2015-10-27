@@ -9,7 +9,7 @@ This package provides a pure Python wrapper to the [Vensim system dynamics simul
 
 1. Provide easy access to existing Vensim functionality in Python. This will help to facilitate:
   * Batch processing of simulation runs under a range of exogenously driven scenarios or events.
-  * Incorporation of changes in model structure.
+  * Incorporation of changes in model structure over time.
   * Communication between separate models.
 
 2. Allow for the inclusion of non-existant Vensim features such as:
