@@ -26,7 +26,7 @@ The goals of this project are very much in line with [PySD](https://github.com/J
 * The version of Python must match the bitness of the Vensim version (which mainly provides 32-bit)
 * Larger models will have the same performance limitations as the Vensim software
 * Only constants and 'Gaming' type auxiliary variables can be set before and during simulations respectively
-* Those who own Vensim PLE will only be able to modify model constants prior to simulation
+* Those who have Vensim PLE installed will only be able to modify model constants prior to simulation
 * Potential compatibility issues with future versions of Vensim
 * Likely more to come...
 
