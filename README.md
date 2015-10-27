@@ -1,4 +1,4 @@
-# venpy
+# VenPy
 Python Tools for Vensim
 
  
