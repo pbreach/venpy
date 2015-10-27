@@ -22,6 +22,8 @@ The goals of this project are very much in line with [PySD](https://github.com/J
 
 ##Limitations
 
+Due to the dependence on Vensim's DLL functionality there comes a set of limitations with the project which must be kept in mind:
+
 * The use of the Vensim DLL through this package can only support Windows (as far as I know)
 * The version of Python must match the bitness of the Vensim version (which mainly provides 32-bit)
 * Larger models will have the same performance limitations as the Vensim software
