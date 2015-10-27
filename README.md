@@ -3,7 +3,7 @@ Python Tools for Vensim
 
  
 
-This package provides a Python wrapper to the [Vensim system dynamics simulation software](http://vensim.com) through the Vensim DLL. The Vensim DLL comes provides the ability to develop interfaces for pre-existing models by allowing access to some of the tools and functions used in the software itself. 
+This package provides a pure Python wrapper to the [Vensim system dynamics simulation software](http://vensim.com) through the Vensim DLL. The Vensim DLL comes provides the ability to develop interfaces for pre-existing models by allowing access to some of the tools and functions used in the software itself. 
 
 ##Goals
 
