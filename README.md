@@ -23,7 +23,7 @@ The goals of this project are very much in line with [PySD](https://github.com/J
 ##Limitations
 
 * The use of the Vensim DLL through this package can only support Windows (as far as I know)
-* The version of Python must match the bitness of the Vensim version (which mainly provides a 32-bit version)
+* The version of Python must match the bitness of the Vensim version (which mainly provides 32-bit)
 * Larger models will have the same performance limitations as the Vensim software
 * Only constants and 'Gaming' type auxiliary variables can be set before and during simulations respectively
 * Those who own Vensim PLE will only be able to modify model constants prior to simulation
