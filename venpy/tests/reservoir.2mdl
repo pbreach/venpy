@@ -1,0 +1,86 @@
+{UTF-8}
+Gate Position=
+	1
+	~	
+	~		|
+
+Inflow=
+	5
+	~	
+	~		|
+
+Outflow=
+	Reservoir * Gate Position * 5
+	~	
+	~		|
+
+Reservoir= INTEG (
+	Inflow-Outflow,
+		5)
+	~	
+	~		|
+
+********************************************************
+	.Control
+********************************************************~
+		Simulation Control Parameters
+	|
+
+FINAL TIME  = 100
+	~	Month
+	~	The final time for the simulation.
+	|
+
+INITIAL TIME  = 0
+	~	Month
+	~	The initial time for the simulation.
+	|
+
+SAVEPER  = 
+        TIME STEP 
+	~	Month [0,?]
+	~	The frequency with which output is stored.
+	|
+
+TIME STEP  = 1
+	~	Month [0,?]
+	~	The time step for the simulation.
+	|
+
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 1
+$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,100,0
+10,1,Reservoir,558,293,40,20,3,3,0,0,0,0,0,0
+12,2,48,366,290,10,8,0,3,0,0,-1,0,0,0
+1,4,6,1,4,0,0,22,0,0,0,-1--1--1,,1|(485,290)|
+1,5,6,2,100,0,0,22,0,0,0,-1--1--1,,1|(408,290)|
+11,6,0,447,290,6,8,34,3,0,0,1,0,0,0
+10,7,Inflow,447,309,21,11,40,3,0,0,-1,0,0,0
+12,8,48,744,292,10,8,0,3,0,0,-1,0,0,0
+1,10,12,8,4,0,0,22,0,0,0,-1--1--1,,1|(703,292)|
+1,11,12,1,100,0,0,22,0,0,0,-1--1--1,,1|(629,292)|
+11,12,0,666,292,6,8,34,3,0,0,1,0,0,0
+10,13,Outflow,666,311,27,11,40,3,0,0,-1,0,0,0
+1,14,1,12,1,0,0,0,0,128,0,-1--1--1,,1|(635,251)|
+10,15,Gate Position,772,371,43,11,8,3,0,0,0,0,0,0
+1,16,15,13,1,0,0,0,0,128,0,-1--1--1,,1|(674,372)|
+///---\\\
+:L<%^E!@
+9:Current
+15:0,0,0,0,0,0
+19:100,0
+27:2,
+34:0,
+5:Gate Position
+35:Date
+36:YYYY-MM-DD
+37:2000
+38:1
+39:1
+40:2
+41:0
+42:1
+24:0
+25:0
+26:0
