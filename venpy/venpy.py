@@ -58,7 +58,7 @@ class VenPy(object):
         except Exception as e:
             print e
             print "'%s' could not be loaded using the path '%s'" % (dll, path)
-        
+
         #Load compiled vensim model
         self.cmd("SPECIAL>LOADMODEL|%s" % model)
         #Initialize buffer to populate with variable names
@@ -100,7 +100,7 @@ class VenPy(object):
 
         if not success:
             raise KeyError("Unable to query value for '%s'." % key)
-        elif result.value <= -1.298074214633707e33:
+        elif result.value == -1.298074214633707e33:
             vtype = self._vtype(key)
             raise KeyError("Cannot get '%s' outside simulation." % vtype)
 
@@ -111,7 +111,7 @@ class VenPy(object):
         #Make sure key is a valid model variable
         if key not in self.allnames:
             raise KeyError("Model variable '%s' not found." % key)
-        
+
         if isinstance(val, (int, float)):
             #Setting single int or float
             cmd = "SIMULATE>SETVAL|%s=%s" % (key, val)
@@ -129,16 +129,17 @@ class VenPy(object):
             message = "Unsupported type '%s' passed to __setitem__" % type(val)
             raise TypeError(message)
 
-        
-    def run(self, runname='Current', step=None):
+
+    def run(self, runname=None, step=None):
         """
         Run the loaded Vensim model.
 
         Parameters
         ----------
-        runname : str, default 'Current'
+        runname : str, default None
             Label for model results. Use a different name for distinguishing
-            output between multiple runs.
+            output between multiple runs. By default the 'Current' is created
+            or overwritten.
         step : int, default 1
             The number of time steps for which the user defined Python
             functions (if any) will get/set model values throughout the Vensim
@@ -148,8 +149,11 @@ class VenPy(object):
         #Do not display any messages from Vensim
         self.dll.vensim_be_quiet(1)
         #Set simulation name before running
-        self.cmd("SIMULATE>RUNNAME|%s" % runname)
-        self.runname = runname
+        if runname:
+            self.cmd("SIMULATE>RUNNAME|%s" % runname)
+            self.runname = runname
+        else:
+            self.runname = 'Current'
 
         #Run entire simulation if no components are set
         if not self.components:
@@ -160,20 +164,20 @@ class VenPy(object):
                 step = 1 if not step else int(step)
                 initial = int(self.__getitem__("INITIAL TIME"))
                 final = int(self.__getitem__("FINAL TIME"))
-                
+
                 assert not (initial - final) % step, \
                 "total time steps are not divisible by step size of %d" % step
 
                 #Start the simulation
                 self.cmd("MENU>GAME|O")
 
-                #Run user defined function(s) at every step                
+                #Run user defined function(s) at every step
                 for _ in range(initial, final, step):
                     self.dll.vensim_start_simulation(0, 2, 1)
                     self._run_udfs()
                     self.dll.vensim_continue_simulation(1)
                     self.dll.vensim_finish_simulation()
-                    
+
             except Exception as e:
                 print e
                 print "Unexpected error in the simulation has occured."
@@ -191,7 +195,7 @@ class VenPy(object):
         if not success:
             raise Exception("Vensim command '%s' was not successful." % cmd)
 
- 
+
    #~TODO use 'vensim_get_data' to retrieve variable data
     def result(self, runname=None):
         """Get model run results loaded into python.
@@ -208,9 +212,9 @@ class VenPy(object):
         data : list
             list containing each row of data for each time step.
         """
-        raise NotImplementedError()        
- 
-       
+        raise NotImplementedError()
+
+
     def close(self):
         ctypes.windll.kernel32.FreeLibrary(self.dll._handle)
 
@@ -224,7 +228,7 @@ class VenPy(object):
             val = self.components[key]()
             self.__setitem__(key, val)
 
-            
+
     def _vtype(self, var):
         return [key for key in self.names if var in self.names[key]][0]
 
