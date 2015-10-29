@@ -64,22 +64,22 @@ class VenPy(object):
         #Initialize buffer to populate with variable names
 
         #Get all variable names from model based on type
-        name_types = {1: 'level', 2: 'aux', 3: 'data', 4: 'init',
-                      5: 'constant', 6: 'lookup', 7: 'group', 8: 'sub_range',
-                      9: 'constraint', 10: 'test_input', 11: 'time_base',
-                      12: 'game', 13: 'sub_constant'}
+        types = {1: 'level', 2: 'aux', 3: 'data', 4: 'init', 5: 'constant',
+                 6: 'lookup', 7: 'group', 8: 'sub_range',9: 'constraint',
+                 10: 'test_input', 11: 'time_base', 12: 'game',
+                 13: 'sub_constant'}
 
         self.names = {}
 
-        #~TODO potential for names to get truncated here depending on how many
-        for nt in name_types:
-            names = ctypes.create_string_buffer('\000' * 1000)
-            self.dll.vensim_get_varnames('*', nt, names, 1000)
-            names = names.raw.replace('#','').split('\x00')
+        for num, var in types.iteritems():
+            maxn = self.dll.vensim_get_varnames('*', num, None, 0)
+            names = (ctypes.c_char * maxn)()
+            self.dll.vensim_get_varnames('*', num, names, maxn)
 
-            self.names[name_types[nt]] = filter(lambda x: x != '', names)
+            self.names[var] = ''.join(list(names)[:-2]).split('\x00')
 
-        self.allnames = [val for key in self.names for val in self.names[key]]
+
+        self.allnames = [item for sub in self.names.values() for item in sub]
         #Set empty components dictionary
         self.components = {}
         #Store model path for processing of results
@@ -196,23 +196,57 @@ class VenPy(object):
             raise Exception("Vensim command '%s' was not successful." % cmd)
 
 
-   #~TODO use 'vensim_get_data' to retrieve variable data
-    def result(self, runname=None):
-        """Get model run results loaded into python.
+    def result(self, varnames=None):
+        """Get last model run results loaded into python.
 
         Parameters
         ----------
-        runname : str, optional
-            Run label of .vdf file to get results from. File must be in the
-            same directory as the .vpm model file. By default, the last model
-            run will be read.
+        varnames : str, default None
+            Variable names for which the data will be retrieved. By default,
+            all model levels and auxiliarys are returned. If an iterable is
+            passed, a subset of these will be returned.
+        runname : str, default None
+            Run label of .vdf file to get results from. By default, the last
+            model run will be read.
 
         Returns
         -------
-        data : list
-            list containing each row of data for each time step.
+        data : dict
+             Python dictionary will be returned where the keys are Vensim model
+             names and values are lists corresponding to model output for each
+             timstep.
         """
-        raise NotImplementedError()
+        assert self.runname, "Run before results can be obtained."
+
+        valid = self.names['level'] + self.names['aux'] + self.names['game']
+
+        if not varnames:
+            variables = valid
+        else:
+            assert filter(lambda x: x not in valid, varnames), "One or more" \
+            " variables are not of type 'Level', 'Auxiliary', or 'Game'"
+
+            variables = varnames
+
+        result = {}
+
+        for v in variables:
+
+            maxn = self.dll.vensim_get_data(self.runname, v, 'Time', None,
+                                            None, 0)
+            vval = (ctypes.c_float * maxn)()
+            tval = (ctypes.c_float * maxn)()
+
+            success = self.dll.vensim_get_data(self.runname, v, 'Time',
+                                               vval, tval, maxn)
+
+            if not success:
+                raise IOError("Could not retrieve data for '%s'" \
+                " corresponding to run '%s'" % (v, self.runname))
+
+            result[v] = list(vval)
+
+        return result
 
 
     def close(self):
