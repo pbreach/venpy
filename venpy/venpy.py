@@ -249,10 +249,6 @@ class VenPy(object):
         return result
 
 
-    def close(self):
-        ctypes.windll.kernel32.FreeLibrary(self.dll._handle)
-
-
     def _run_udfs(self):
         for key in self.components:
             #Ensure only gaming type variables can be set during sim

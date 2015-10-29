@@ -47,6 +47,3 @@ result = model.result()
 
 #Load model output into a DataFrame and plot
 pd.DataFrame(result).plot()
-
-#Close connection to the Vensim DLL
-model.close()
