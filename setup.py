@@ -7,4 +7,5 @@ setup(name='venpy',
       author='Patrick Breach',
       author_email='pbreach@uwo.ca',
       description='Vensim Tools for Python',
+      url='https://github.com/pbreach/venpy'
       packages=['venpy'],)
