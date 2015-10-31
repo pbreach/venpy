@@ -7,7 +7,7 @@ model component is replaced with a 2-way lookup table via a Python function.
 For the Python function to be run at each time step and replace the value of
 `Outflow` in Vensim, `Outflow` needs to be set as a Gaming variable.
 
-Model results are extracted prior to simulation and plotted.
+Model results are extracted after simulation and plotted.
 """
 from scipy.interpolate import interp2d
 import pandas as pd
