@@ -7,7 +7,7 @@ Created on Mon Oct 12 22:50:41 2015
 import ctypes
 from ctypes import util
 import platform
-import os
+import re
 
 
 def load(model, dll='vendll32.dll'):
@@ -27,9 +27,8 @@ def load(model, dll='vendll32.dll'):
     return VenPy(dll, model)
 
 
-#~TODO support subscripting functionality getting/setting with python objects
-
 class VenPy(object):
+
 
     def __init__(self, dll, model):
         #Get bitness and OS
@@ -78,14 +77,12 @@ class VenPy(object):
 
             self.names[var] = ''.join(list(names)[:-2]).split('\x00')
 
-
         self.allnames = [item for sub in self.names.values() for item in sub]
         #Set empty components dictionary
         self.components = {}
-        #Store model path for processing of results
-        self.model_path = os.path.dirname(os.path.abspath(model))
         #Set runname as none when no simulation has taken place
         self.runname = None
+
 
 
     def __getitem__(self, key):
@@ -93,20 +90,38 @@ class VenPy(object):
         if key not in self.allnames:
             raise KeyError("Model variable '%s' not found." % key)
 
-        #Define ctypes single precision floating point number
-        result = ctypes.c_float(0)
-        #Store value based on key lookup in result
-        success = self.dll.vensim_get_val(key, ctypes.byref(result))
+        #Test for subcript type of string
+        name = re.search(r'([\w|\s])+\[.+\]', key)
 
-        if not success:
-            raise KeyError("Unable to query value for '%s'." % key)
-        elif result.value == -1.298074214633707e33:
-            vtype = self._vtype(key)
-            raise KeyError("Cannot get '%s' outside simulation." % vtype)
+        if name:
+            #Get Vensim offset for variable
+            offset = self.dll.vensim_get_varoff(key)
+            if not offset:
+                raise Exception("Subscripted key '%s' not found" % key)
 
-        return result.value
+            #Get subscripted variable into ctypes single precision float array
+            maxn = self.dll.vensim_get_vecvals(offset, None, 0)
+            result = (ctypes.c_float * maxn)()
+            self.dll.vensim_get_vecvals(offset, result, maxn)
+
+        else:
+            #Define ctypes single precision floating point number
+            result = ctypes.c_float()
+            #Store value based on key lookup in result
+            success = self.dll.vensim_get_val(key, ctypes.byref(result))
+
+            if not success:
+                raise KeyError("Unable to query value for '%s'." % key)
+            elif result.value == -1.298074214633707e33:
+                vtype = self._vtype(key)
+                raise KeyError("Cannot get '%s' outside simulation." % vtype)
+
+        return result
 
 
+
+    #~TODO Need to find out how to make sure Python type variable will work for
+    #Vensim type
     def __setitem__(self, key, val):
         #Make sure key is a valid model variable
         if key not in self.allnames:
@@ -116,18 +131,35 @@ class VenPy(object):
             #Setting single int or float
             cmd = "SIMULATE>SETVAL|%s=%s" % (key, val)
             self.cmd(cmd)
+
         elif hasattr(val, "__call__"):
             #Store callable as model component called when run
             self.components[key] = val
+
         elif hasattr(val, "__iter__"):
-            #Update lookup table if passed any nx2 iterable
-            nums = [x for sub in val for x in sub]
-            string = "[%s]" % ','.join(['({},{})'] * len(val)/2)
-            cmd = "SIMULATE>SETVAL|%s=%s" % (key, string.format(*nums))
-            self.cmd(cmd)
+            #List of list is used to set subscripts
+            if all(isinstance(x, list) for x in val):
+                assert all(map(len, val)), "Sublists must be of equal len."
+                #Convert numbers to strings
+                string = [', '.join(map('{:4f}'.format, v)) for v in val]
+                cmd = 'SIMULATE>SETVAL|"%s=%s"' % (key, ';'.join(string))
+                self.cmd(cmd)
+
+            #List of tuples is used to set lookups
+            elif all(isinstance(x, list) for x in val):
+                #Update lookup table if passed any nx2 iterable
+                nums = [x for sub in val for x in sub]
+                string = "[%s]" % ','.join(['({},{})'] * len(val)/2)
+                cmd = "SIMULATE>SETVAL|%s(=%s)" % (key, string.format(*nums))
+                self.cmd(cmd)
+
+            else:
+                raise TypeError("Can only set list of list for subscripted" \
+                " variables, or list of tuples for lookups")
         else:
             message = "Unsupported type '%s' passed to __setitem__" % type(val)
             raise TypeError(message)
+
 
 
     def run(self, runname=None, step=None):
@@ -183,6 +215,7 @@ class VenPy(object):
                 print "Unexpected error in the simulation has occured."
 
 
+
     def cmd(self, cmd):
         """Send a command using the Vensim DLL.
 
@@ -196,6 +229,7 @@ class VenPy(object):
             raise Exception("Vensim command '%s' was not successful." % cmd)
 
 
+
     def result(self, varnames=None):
         """Get last model run results loaded into python.
 
@@ -205,13 +239,10 @@ class VenPy(object):
             Variable names for which the data will be retrieved. By default,
             all model levels and auxiliarys are returned. If an iterable is
             passed, a subset of these will be returned.
-        runname : str, default None
-            Run label of .vdf file to get results from. By default, the last
-            model run will be read.
 
         Returns
         -------
-        data : dict
+        result : dict
              Python dictionary will be returned where the keys are Vensim model
              names and values are lists corresponding to model output for each
              timstep.
@@ -249,6 +280,7 @@ class VenPy(object):
         return result
 
 
+
     def _run_udfs(self):
         for key in self.components:
             #Ensure only gaming type variables can be set during sim
@@ -259,12 +291,6 @@ class VenPy(object):
             self.__setitem__(key, val)
 
 
+
     def _vtype(self, var):
         return [key for key in self.names if var in self.names[key]][0]
-
-
-
-
-
-
-
