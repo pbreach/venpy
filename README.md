@@ -15,6 +15,9 @@ This package provides a pure Python wrapper to the [Vensim system dynamics simul
 2. Allow for the inclusion of non-existant Vensim features such as:
   * Spatially distributed models through communication with other software(s) such as ArcGIS.
   * The use of existing and new software being developed in the scientific Python community.
+ 
+##Documentation
+A guide for basic usage of VenPy is provided [here](https://github.com/pbreach/venpy/blob/master/docs/Basic%20Usage.ipynb)
 
 ##Focus
 
