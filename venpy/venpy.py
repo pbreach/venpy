@@ -168,22 +168,22 @@ class VenPy(object):
             raise TypeError(message)
 
 
-    def run(self, runname=None, step=None):
+    def run(self, runname='Run', step=1):
         """
         Run the loaded Vensim model.
 
         Parameters
         ----------
-        runname : str, default None
+        runname : str, default 'Run'
             Label for model results. Use a different name for distinguishing
-            output between multiple runs. By default the 'Current' is created
-            or overwritten.
+            output between multiple runs.
         step : int, default 1
             The number of time steps for which the user defined Python
             functions (if any) will get/set model values throughout the Vensim
             simulation.
 
         """
+        step = int(step)
         #Do not display any messages from Vensim
         self.dll.vensim_be_quiet(1)
         #Set simulation name before running
@@ -196,7 +196,6 @@ class VenPy(object):
         else:
             try:
                 #Run simulation step by step
-                step = 1 if not step else int(step)
                 initial = int(self.__getitem__("INITIAL TIME"))
                 final = int(self.__getitem__("FINAL TIME"))
 
