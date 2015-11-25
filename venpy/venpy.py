@@ -187,7 +187,7 @@ class VenPy(object):
         #Do not display any messages from Vensim
         self.dll.vensim_be_quiet(1)
         #Set simulation name before running
-        self.runname = 'Venpy' if not runname else runname
+        self.runname = runname
         self.cmd("SIMULATE>RUNNAME|%s" % self.runname)
 
         #Run entire simulation if no components are set
