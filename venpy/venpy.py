@@ -131,7 +131,7 @@ class VenPy(object):
             #Store callable as model component called when run
             self.components[key] = val
 
-        elif type(val) == np.ndarray:
+        elif type(val) == np.ndarray or type(val) == list:
             #Get all names in passed string
             names = map(str.strip, re.findall(r'[\w|\s]+', key))
             #Get variable name being subscripted and subranges / elements
@@ -153,7 +153,7 @@ class VenPy(object):
                     combos = filter(func, combos)
 
                 #Convert values to strings and flatten out array
-                values = val.flatten().astype(str)
+                values = np.asarray(val).flatten().astype(str)
 
                 assert len(values) == len(combos), "Array has %s elements, " \
                 "while '%s' has %s elements" % (len(values), key, len(combos))
