@@ -88,6 +88,9 @@ class VenPy(object):
 
 
     def __getitem__(self, key):
+
+        key = self._quote(key)
+
         #Test for subcript type of string
         if '[' in key and ']' in key:
             #Get all names in passed string
@@ -122,6 +125,8 @@ class VenPy(object):
 
 
     def __setitem__(self, key, val):
+
+        key = self._quote(key)
 
         if isinstance(val, (int, float)):
             #Setting single int or float
@@ -257,7 +262,7 @@ class VenPy(object):
             assert filter(lambda x: x in valid, varnames), "One or more" \
             " variables are not of type 'Level', 'Auxiliary', or 'Game'"
 
-            variables = varnames
+            variables = map(self._quote, varnames)
 
         result = {}
 
@@ -356,5 +361,9 @@ class VenPy(object):
 
 
     def _is_subbed(self, key):
+        key = self._quote(key)
         maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
         return True if maxn else False
+
+    def _quote(self, key):
+        return '"%s"' % key
