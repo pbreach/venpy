@@ -10,6 +10,7 @@ import platform
 import re
 
 import numpy as np
+import pandas as pd
 
 
 def load(model, dll='vendll32.dll'):
@@ -70,21 +71,23 @@ class VenPy(object):
                  10: 'test_input', 11: 'time_base', 12: 'game',
                  13: 'sub_constant'}
 
-        self.names = {}
+        self.vtype = {}
 
         for num, var in types.iteritems():
             maxn = self.dll.vensim_get_varnames('*', num, None, 0)
             names = (ctypes.c_char * maxn)()
             self.dll.vensim_get_varnames('*', num, names, maxn)
 
-            self.names[var] = ''.join(list(names)[:-2]).split('\x00')
-
-        self.allnames = [item for sub in self.names.values() for item in sub]
+            names = ''.join(list(names)[:-2]).split('\x00')
+            
+            for n in names:
+                if n:
+                    self.vtype[n] = var
+                
         #Set empty components dictionary
         self.components = {}
         #Set runname as none when no simulation has taken place
         self.runname = None
-
 
 
     def __getitem__(self, key):
@@ -235,15 +238,23 @@ class VenPy(object):
             raise Exception("Vensim command '%s' was not successful." % cmd)
 
 
-    def result(self, varnames=None):
-        """Get last model run results loaded into python.
+    def result(self, names=None, vtype=None):
+        """Get last model run results loaded into python. Specific variables
+        can be retrieved using the `names` attribute, or all variables of a
+        specific type can be returned using the `vtype` attribute.
+        
+        All variables of type 'level', 'aux', and 'game' are returned by
+        default.
 
         Parameters
         ----------
-        varnames : str, default None
+        names : str or sequence, default None
             Variable names for which the data will be retrieved. By default,
             all model levels and auxiliarys are returned. If an iterable is
             passed, a subset of these will be returned.
+        vtype : str, default None
+            Return result for variable names of specific types(s). Valid types
+            that can be specified are 'level', 'aux', and/or 'game'.
 
         Returns
         -------
@@ -252,22 +263,39 @@ class VenPy(object):
              names and values are lists corresponding to model output for each
              timstep.
         """
+        #Make sure results are generated before retrieved
         assert self.runname, "Run before results can be obtained."
-
-        valid = self.names['level'] + self.names['aux'] + self.names['game']
-        valid = filter(lambda x: x != '', valid)
-        if not varnames:
-            variables = valid
+        #Make sure both kwargs are not set simultaneously
+        assert not (names and vtype), "Only one of either 'names' or 'vtype'" \
+        " can be set."
+        
+        valid = set(['level', 'aux', 'game'])
+        
+        if names:
+            #Make sure all names specified are in the model
+            assert all(n in self.vtype.keys() for n in names), "One or more " \
+            "names are not defined in Vensim."
+            #Ensure specified names are of the appropriate type
+            types = set([self.vtype[n] for n in names]) 
+            assert valid >= types, "One or more names are not of type " \
+            "'level', 'aux', or 'game'."
+            varnames = names
+        
+        elif vtype:
+            #Make sure vtype is valid
+            assert vtype in valid, "'vtype' must be 'level', 'aux', or 'game'."
+            varnames = [n for n,v in self.vtype.iteritems() if v == vtype]
+        
         else:
-            assert filter(lambda x: x in valid, varnames), "One or more" \
-            " variables are not of type 'Level', 'Auxiliary', or 'Game'"
-
-            variables = map(self._quote, varnames)
+            varnames = [n for n,v in self.vtype.iteritems() if v in vtype]
+            
+        if not varnames:
+            raise Exception("No variables of specified type(s)." % vtype)
 
         result = {}
 
         allvars = []
-        for v in variables:
+        for v in varnames:
             if self._is_subbed(v):
                 allvars += [v + c for c in self._get_sub_combos(v)]
             else:
@@ -290,7 +318,7 @@ class VenPy(object):
 
             result[v] = list(vval)
 
-        return result
+        return pd.DataFrame(result, list(tval))
 
 
     def _run_udfs(self):
