@@ -8,6 +8,7 @@ import ctypes
 from ctypes import util
 import platform
 import re
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -96,24 +97,17 @@ class VenPy(object):
             names = map(str.strip, re.findall(r'[\w|\s]+', key))
             #Get variable name being subscripted and subranges / elements
             var, subs = names[0], set(names[1:])
-            
-            ranges = [s for s in subs if self.vtype[s] == 'sub_range']
-            elements = [s for s in subs if self.vtype[s] == 'sub_constant']
+            #Get each subscript element
+            elements = self._get_sub_elements(subs)
 
-            if elements and not ranges:
+            if all(len(e)==1 for e in elements):
                 return self._getval(key)
 
             else:
                 #Get all subscript combinations of subscripted variables
-                combos = self._get_sub_combos(var)
-
-                if elements:
-                    #Filter only specified elements if present
-                    func = lambda x: any(e in x for e in elements)
-                    combos = filter(func, combos)
-
+                combos = product(*elements)
                 #Get shape of resulting array
-                shape = self._get_sub_shape(subs)
+                shape = map(len, elements)
                 #Get values of subscript combinations
                 values = [self._getval(var+c) for c in combos]
 
@@ -139,21 +133,16 @@ class VenPy(object):
             #Get variable name being subscripted and subranges / elements
             var, subs = names[0], set(names[1:])
 
-            ranges = [s for s in subs if self.vtype[s] == 'sub_range']
-            elements = [s for s in subs if self.vtype[s] == 'sub_constant']
+            #Get each subscript element
+            elements = self._get_sub_elements(subs)
 
-            if elements and not ranges:
+            if all(len(e)==1 for e in elements):
                 TypeError("Array or list cannot be set to fully subscripted " \
                 "variable %s" % key)
 
             else:
                 #Get all subscript combinations of subscripted variables
-                combos = self._get_sub_combos(var)
-
-                if elements:
-                    #Filter only specified elements if present
-                    func = lambda x: any(e in x for e in elements)
-                    combos = filter(func, combos)
+                combos = product(*elements)
 
                 #Convert values to strings and flatten out array
                 values = np.asarray(val).flatten().astype(str)
@@ -162,8 +151,8 @@ class VenPy(object):
                 "while '%s' has %s elements" % (len(values), key, len(combos))
 
                 #Set subscript combinations
-                for f, v in zip(combos, values):
-                    self._setval(var+f, v)
+                for c, v in zip(combos, values):
+                    self._setval(var+c, v)
 
         else:
             message = "Unsupported type '%s' passed to __setitem__ for Venim" \
@@ -350,31 +339,20 @@ class VenPy(object):
         cmd = "SIMULATE>SETVAL|%s=%s" % (key, val)
         self.cmd(cmd)
 
-
-    def _get_sub_combos(self, key):
-        #Get all subscript combinations for variable
-        maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
-        combos = (ctypes.c_char * maxn)()
-        self.dll.vensim_get_varattrib(key, 9, combos, maxn)
-        
-        return ''.join(list(combos)[:-2]).split('\x00')
-
-
-    def _get_sub_shape(self, subs):        
-        shape = []
+      
+    def _get_sub_elements(self, subs):
+        elements = []
         for s in subs:
             if self.vtype[s] == 'sub_range':
-                #Figure out how many subscripts are in the range
                 maxn = self.dll.vensim_get_varattrib(s, 9, None, 0)
                 res = (ctypes.c_char * maxn)()
                 self.dll.vensim_get_varattrib(s, 9, res, maxn)
                 res = ''.join(list(res)[:-2]).split('\x00')
-                shape.append(len(res))
+                elements.append(list(res))
             else:
-                #Append dimension length of 1 for subscript element
-                shape.append(1)
-        
-        return tuple(shape)
+                elements.append(list(s))
+                
+        return elements
 
 
     def _is_subbed(self, key):
