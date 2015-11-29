@@ -8,8 +8,10 @@ import ctypes
 from ctypes import util
 import platform
 import re
+from itertools import product
 
 import numpy as np
+import pandas as pd
 
 
 def load(model, dll='vendll32.dll'):
@@ -62,7 +64,6 @@ class VenPy(object):
 
         #Load compiled vensim model
         self.cmd("SPECIAL>LOADMODEL|%s" % model)
-        #Initialize buffer to populate with variable names
 
         #Get all variable names from model based on type
         types = {1: 'level', 2: 'aux', 3: 'data', 4: 'init', 5: 'constant',
@@ -70,26 +71,25 @@ class VenPy(object):
                  10: 'test_input', 11: 'time_base', 12: 'game',
                  13: 'sub_constant'}
 
-        self.names = {}
+        self.vtype = {}
 
         for num, var in types.iteritems():
             maxn = self.dll.vensim_get_varnames('*', num, None, 0)
             names = (ctypes.c_char * maxn)()
             self.dll.vensim_get_varnames('*', num, names, maxn)
-
-            self.names[var] = ''.join(list(names)[:-2]).split('\x00')
-
-        self.allnames = [item for sub in self.names.values() for item in sub]
+            names = ''.join(list(names)[:-2]).split('\x00')
+            
+            for n in names:
+                if n:
+                    self.vtype[n] = var
+        
         #Set empty components dictionary
         self.components = {}
         #Set runname as none when no simulation has taken place
         self.runname = None
 
 
-
     def __getitem__(self, key):
-
-        key = self._quote(key)
 
         #Test for subcript type of string
         if '[' in key and ']' in key:
@@ -97,24 +97,17 @@ class VenPy(object):
             names = map(str.strip, re.findall(r'[\w|\s]+', key))
             #Get variable name being subscripted and subranges / elements
             var, subs = names[0], set(names[1:])
-            range_names = set(self.names['sub_range'])
-            ranges = subs.intersection(range_names)
-            elements = subs - ranges
+            #Get each subscript element
+            elements = self._get_sub_elements(subs)
 
-            if elements and not ranges:
+            if all(len(e)==1 for e in elements):
                 return self._getval(key)
 
             else:
                 #Get all subscript combinations of subscripted variables
-                combos = self._get_sub_combos(var)
-
-                if elements:
-                    #Filter only specified elements if present
-                    func = lambda x: any(e in x for e in elements)
-                    combos = filter(func, combos)
-
+                combos = product(*elements)
                 #Get shape of resulting array
-                shape = self._get_sub_shape(subs)
+                shape = map(len, elements)
                 #Get values of subscript combinations
                 values = [self._getval(var+c) for c in combos]
 
@@ -126,8 +119,6 @@ class VenPy(object):
 
     def __setitem__(self, key, val):
 
-        key = self._quote(key)
-
         if isinstance(val, (int, float)):
             #Setting single int or float
             self._setval(key, val)
@@ -136,26 +127,22 @@ class VenPy(object):
             #Store callable as model component called when run
             self.components[key] = val
 
-        elif type(val) == np.ndarray or type(val) == list:
+        elif type(val) == np.ndarray:
             #Get all names in passed string
             names = map(str.strip, re.findall(r'[\w|\s]+', key))
             #Get variable name being subscripted and subranges / elements
             var, subs = names[0], set(names[1:])
-            range_names = set(self.names['sub_range'])
-            ranges = subs.intersection(range_names)
-            elements = subs - ranges
 
-            if elements and not ranges:
-                self._setval(key, val)
+            #Get each subscript element
+            elements = self._get_sub_elements(subs)
+
+            if all(len(e)==1 for e in elements):
+                TypeError("Array or list cannot be set to fully subscripted " \
+                "variable %s" % key)
 
             else:
                 #Get all subscript combinations of subscripted variables
-                combos = self._get_sub_combos(var)
-
-                if elements:
-                    #Filter only specified elements if present
-                    func = lambda x: any(e in x for e in elements)
-                    combos = filter(func, combos)
+                combos = product(*elements)
 
                 #Convert values to strings and flatten out array
                 values = np.asarray(val).flatten().astype(str)
@@ -164,8 +151,8 @@ class VenPy(object):
                 "while '%s' has %s elements" % (len(values), key, len(combos))
 
                 #Set subscript combinations
-                for f, v in zip(combos, values):
-                    self._setval(var+f, v)
+                for c, v in zip(combos, values):
+                    self._setval(var+c, v)
 
         else:
             message = "Unsupported type '%s' passed to __setitem__ for Venim" \
@@ -235,15 +222,23 @@ class VenPy(object):
             raise Exception("Vensim command '%s' was not successful." % cmd)
 
 
-    def result(self, varnames=None):
-        """Get last model run results loaded into python.
+    def result(self, names=None, vtype=None):
+        """Get last model run results loaded into python. Specific variables
+        can be retrieved using the `names` attribute, or all variables of a
+        specific type can be returned using the `vtype` attribute.
+        
+        All variables of type 'level', 'aux', and 'game' are returned by
+        default.
 
         Parameters
         ----------
-        varnames : str, default None
+        names : str or sequence, default None
             Variable names for which the data will be retrieved. By default,
             all model levels and auxiliarys are returned. If an iterable is
             passed, a subset of these will be returned.
+        vtype : str, default None
+            Return result for variable names of specific types(s). Valid types
+            that can be specified are 'level', 'aux', and/or 'game'.
 
         Returns
         -------
@@ -252,27 +247,43 @@ class VenPy(object):
              names and values are lists corresponding to model output for each
              timstep.
         """
+        #Make sure results are generated before retrieved
         assert self.runname, "Run before results can be obtained."
-
-        valid = self.names['level'] + self.names['aux'] + self.names['game']
-        valid = filter(lambda x: x != '', valid)
-        if not varnames:
-            variables = valid
+        #Make sure both kwargs are not set simultaneously
+        assert not (names and vtype), "Only one of either 'names' or 'vtype'" \
+        " can be set."
+        
+        valid = set(['level', 'aux', 'game'])
+        
+        if names:
+            #Make sure all names specified are in the model
+            assert all(n in self.vtype.keys() for n in names), "One or more " \
+            "names are not defined in Vensim."
+            #Ensure specified names are of the appropriate type
+            types = set([self.vtype[n] for n in names]) 
+            assert valid >= types, "One or more names are not of type " \
+            "'level', 'aux', or 'game'."
+            varnames = names
+        
+        elif vtype:
+            #Make sure vtype is valid
+            assert vtype in valid, "'vtype' must be 'level', 'aux', or 'game'."
+            varnames = [n for n,v in self.vtype.iteritems() if v == vtype]
+        
         else:
-            assert filter(lambda x: x in valid, varnames), "One or more" \
-            " variables are not of type 'Level', 'Auxiliary', or 'Game'"
-
-            variables = map(self._quote, varnames)
+            varnames = [n for n,v in self.vtype.iteritems() if v in vtype]
+            
+        if not varnames:
+            raise Exception("No variables of specified type(s)." % vtype)
 
         result = {}
 
         allvars = []
-        for v in variables:
+        for v in varnames:
             if self._is_subbed(v):
                 allvars += [v + c for c in self._get_sub_combos(v)]
             else:
                 allvars.append(v)
-
 
         for v in allvars:
 
@@ -288,9 +299,9 @@ class VenPy(object):
                 raise IOError("Could not retrieve data for '%s'" \
                 " corresponding to run '%s'" % (v, self.runname))
 
-            result[v] = list(vval)
+            result[v] = np.array(vval)
 
-        return result
+        return pd.DataFrame(result, index=np.array(tval))
 
 
     def _run_udfs(self):
@@ -301,15 +312,11 @@ class VenPy(object):
             else:
                 name = key
 
-            assert name in self.names['game'], \
+            assert self.vtype[name] == 'game', \
             "%s must be of 'Gaming' type to set during sim." % key
             #Set vensim variable using component function output
             val = self.components[key]()
             self.__setitem__(key, val)
-
-
-    def _vtype(self, var):
-        return [key for key in self.names if var in self.names[key]][0]
 
 
     def _getval(self, key):
@@ -321,7 +328,7 @@ class VenPy(object):
         if not success:
             raise KeyError("Unable to query value for '%s'." % key)
         elif result.value == -1.298074214633707e33:
-            vtype = self._vtype(key)
+            vtype = self.vtype[key]
             raise KeyError("Cannot get '%s' outside simulation." % vtype)
 
         return result.value
@@ -332,38 +339,22 @@ class VenPy(object):
         cmd = "SIMULATE>SETVAL|%s=%s" % (key, val)
         self.cmd(cmd)
 
-
-    def _get_sub_combos(self, key):
-        #Get all subscript combinations for variable
-        maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
-        combos = (ctypes.c_char * maxn)()
-        self.dll.vensim_get_varattrib(key, 9, combos, maxn)
-        return ''.join(list(combos)[:-2]).split('\x00')
-
-
-    def _get_sub_shape(self, subs):
-        #Figure out which are elements and ranges
-        ranges = {s for s in subs if s in self.names['sub_range']}
-        #If any subranges are present then get array of values
-        if ranges:
-            shape = []
-            #Find out resulting shape (likely a better way to do this)
-            for s in subs:
-                if s in ranges:
-                     maxn = self.dll.vensim_get_varattrib(s, 9, None, 0)
-                     res = (ctypes.c_char * maxn)()
-                     self.dll.vensim_get_varattrib(s, 9, res, maxn)
-                     res = ''.join(list(res)[:-2]).split('\x00')
-                     shape.append(len(res))
-                else:
-                    shape.append(1)
-        return tuple(shape)
+      
+    def _get_sub_elements(self, subs):
+        elements = []
+        for s in subs:
+            if self.vtype[s] == 'sub_range':
+                maxn = self.dll.vensim_get_varattrib(s, 9, None, 0)
+                res = (ctypes.c_char * maxn)()
+                self.dll.vensim_get_varattrib(s, 9, res, maxn)
+                res = ''.join(list(res)[:-2]).split('\x00')
+                elements.append(list(res))
+            else:
+                elements.append(list(s))
+                
+        return elements
 
 
     def _is_subbed(self, key):
-        key = self._quote(key)
         maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
         return True if maxn else False
-
-    def _quote(self, key):
-        return '"%s"' % key
