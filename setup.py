@@ -9,4 +9,4 @@ setup(name='venpy',
       description='Vensim Tools for Python',
       url='https://github.com/pbreach/venpy',
       packages=['venpy'],
-      install_requires=['numpy'])
+      install_requires=['numpy','pandas'])
