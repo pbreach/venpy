@@ -12,7 +12,7 @@ This package provides a pure Python wrapper to the [Vensim system dynamics simul
   * Incorporation of changes in model structure over time.
 
 2. Allow for the inclusion of non-existant Vensim features such as:
-  * Communication and data exchange with external programs through python subprocesses.
+  * Communication and data exchange with external programs through Python subprocesses.
   * Easy integration of 3rd party Python libraries.
   * Ability to run multiple Vensim models simultaneously and exchange data between them.
  
