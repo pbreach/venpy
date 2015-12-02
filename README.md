@@ -21,7 +21,7 @@ A guide for basic usage of VenPy is provided [here](https://github.com/pbreach/v
 
 ##Focus
 
-The goals of this project are very much in line with [PySD](https://github.com/JamesPHoughton/pysd) and is in no way a replacement for this effort. In this project there is a specific focus on *Vensim* models through the DLL. This includes the use of *all* Vensim functions (depending on whether the DSS or PLE versions are installed) and features which are not available in other system dynamics simulation programs sucha as [Stella](http://www.iseesystems.com/softwares/Education/StellaSoftware.aspx), [Simulink](https://en.wikipedia.org/wiki/Simulink), [MapleSim](https://en.wikipedia.org/wiki/MapleSim), etc.
+The goals of this project are very much in line with [PySD](https://github.com/JamesPHoughton/pysd) and is in no way a replacement for this effort. In this project there is a specific focus on *Vensim* models through the DLL. This includes the use of *all* Vensim functions (depending on whether the DSS or PLE versions are installed) and features which are not available in other system dynamics simulation programs such as [Stella](http://www.iseesystems.com/softwares/Education/StellaSoftware.aspx), [Simulink](https://en.wikipedia.org/wiki/Simulink), [MapleSim](https://en.wikipedia.org/wiki/MapleSim), etc.
 
 ##Limitations
 
