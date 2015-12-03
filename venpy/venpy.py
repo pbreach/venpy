@@ -254,8 +254,6 @@ class VenPy(object):
              names and values are lists corresponding to model output for each
              timstep.
         """
-        #Add in double-quotes as Vensim expects for vars with special chars
-        names = [self.quote_map[n] for n in names]        
 
         #Make sure results are generated before retrieved
         assert self.runname, "Run before results can be obtained."
@@ -266,6 +264,8 @@ class VenPy(object):
         valid = set(['level', 'aux', 'game'])
         
         if names:
+            #Add in double-quotes as Vensim expects for vars with special chars
+            names = [self.quote_map[n] for n in names]        
             #Make sure all names specified are in the model
             assert all(n in self.vtype.keys() for n in names), "One or more " \
             "names are not defined in Vensim."
@@ -351,6 +351,7 @@ class VenPy(object):
 
       
     def _get_sub_elements(self, subs):
+        subs = [self.quote_map[s] for s in subs]        
         elements = []
         for s in subs:
             if self.vtype[s] == 'sub_range':
@@ -366,5 +367,6 @@ class VenPy(object):
 
 
     def _is_subbed(self, key):
+        key = key.replace('"','')        
         maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
         return True if maxn else False
