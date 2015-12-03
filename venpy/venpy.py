@@ -72,6 +72,7 @@ class VenPy(object):
                  13: 'sub_constant'}
 
         self.vtype = {}
+        self.quote_map = {}
 
         for num, var in types.iteritems():
             maxn = self.dll.vensim_get_varnames('*', num, None, 0)
@@ -81,16 +82,20 @@ class VenPy(object):
             
             for n in names:
                 if n:
-                    self.vtype[n] = var
+                    self.vtype[n.replace('"','')] = var 
+                    self.quote_map[n.replace('"','')] = n
         
         #Set empty components dictionary
         self.components = {}
         #Set runname as none when no simulation has taken place
         self.runname = None
+        #C
 
 
     def __getitem__(self, key):
-
+        
+        #Add in double-quotes as Vensim expects for vars with special chars
+        key = self.quote_map[key]        
         #Test for subcript type of string
         if '[' in key and ']' in key:
             #Get all names in passed string
@@ -105,7 +110,7 @@ class VenPy(object):
 
             else:
                 #Get all subscript combinations of subscripted variables
-                combos = product(*elements)
+                combos = list(product(*elements))
                 #Get shape of resulting array
                 shape = map(len, elements)
                 #Get values of subscript combinations
@@ -118,6 +123,8 @@ class VenPy(object):
 
 
     def __setitem__(self, key, val):
+        #Add in double-quotes as Vensim expects for vars with special chars
+        key = self.quote_map[key]        
 
         if isinstance(val, (int, float)):
             #Setting single int or float
@@ -142,7 +149,7 @@ class VenPy(object):
 
             else:
                 #Get all subscript combinations of subscripted variables
-                combos = product(*elements)
+                combos = list(product(*elements))
 
                 #Convert values to strings and flatten out array
                 values = np.asarray(val).flatten().astype(str)
@@ -247,6 +254,9 @@ class VenPy(object):
              names and values are lists corresponding to model output for each
              timstep.
         """
+        #Add in double-quotes as Vensim expects for vars with special chars
+        names = [self.quote_map[n] for n in names]        
+
         #Make sure results are generated before retrieved
         assert self.runname, "Run before results can be obtained."
         #Make sure both kwargs are not set simultaneously
