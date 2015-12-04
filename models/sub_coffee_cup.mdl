@@ -5,8 +5,8 @@ Coffee Temp[cup,room]= INTEG (
 	~	degC
 	~		|
 
-Cooling[cup,room]=
-	(Coffee Temp[cup,room]-Room Temperature[room])/Time Constant[cup]
+Cooling[cup,room]= GAME (
+	(Coffee Temp[cup,room]-Room Temperature[room])/Time Constant[cup])
 	~	degC/Minute
 	~		|
 
@@ -52,7 +52,7 @@ INITIAL TIME  = 0
 	|
 
 SAVEPER  = 
-        TIME STEP 
+        TIME STEP
 	~	Minute [0,?]
 	~	The frequency with which output is stored.
 	|
@@ -88,7 +88,7 @@ $192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,1
 27:2,
 34:0,
 4:Time
-5:Coffee Temp[cup,room]
+5:Init Coffee Temp[cup,room]
 35:Date
 36:YYYY-MM-DD
 37:2000
