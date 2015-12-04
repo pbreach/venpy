@@ -94,7 +94,7 @@ class VenPy(object):
         #Test for subcript type of string
         if self._is_subbed(key):
             #Get subscript element information
-            var, elements, combos = self.get_sub_info(key)
+            var, elements, combos = self._get_sub_info(key)
     
             if all(len(e)==1 for e in elements):
                 return self._getval(key)
@@ -121,9 +121,9 @@ class VenPy(object):
             #Store callable as model component called when run
             self.components[key] = val
 
-        elif type(val) == np.ndarray or type(list):
+        elif (type(val)==np.ndarray or type(val)==list) and self._is_subbed(key):
             #Get subscript element information
-            var, elements, combos = self.get_sub_info(key)
+            var, elements, combos = self._get_sub_info(key)
 
             if all(len(e)==1 for e in elements):
                 TypeError("Array or list cannot be set to fully subscripted " \
@@ -142,7 +142,7 @@ class VenPy(object):
         else:
             
             message = "Unsupported type '%s' passed to __setitem__ for Venim" \
-                      "variable '%s' of type %s" % (type(val), key, self.vtype[])
+                      "variable '%s'." % (type(val), key)
             raise TypeError(message)
 
 
@@ -349,9 +349,8 @@ class VenPy(object):
 
 
     def _is_subbed(self, key):
-        key = key.replace('"','')        
         maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
-        return True if maxn else False
+        return False if maxn == 2 else True
 
         
     def _get_subs(self, key):
