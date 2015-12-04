@@ -12,7 +12,7 @@ This package provides a pure Python wrapper to the [Vensim system dynamics simul
   * Incorporation of changes in model structure over time.
 
 2. Allow for the inclusion of non-existant Vensim features such as:
-  * Communication and data exchange with external programs through python subprocesses.
+  * Communication and data exchange with external programs through Python subprocesses.
   * Easy integration of 3rd party Python libraries.
   * Ability to run multiple Vensim models simultaneously and exchange data between them.
  
@@ -21,7 +21,7 @@ A guide for basic usage of VenPy is provided [here](https://github.com/pbreach/v
 
 ##Focus
 
-The goals of this project are very much in line with [PySD](https://github.com/JamesPHoughton/pysd) and is in no way a replacement for this effort. In this project there is a specific focus on *Vensim* models through the DLL. This includes the use of *all* Vensim functions (depending on whether the DSS or PLE versions are installed) and features which are not available in other system dynamics simulation programs sucha as [Stella](http://www.iseesystems.com/softwares/Education/StellaSoftware.aspx), [Simulink](https://en.wikipedia.org/wiki/Simulink), [MapleSim](https://en.wikipedia.org/wiki/MapleSim), etc.
+The goals of this project are very much in line with [PySD](https://github.com/JamesPHoughton/pysd) and is in no way a replacement for this effort. In this project there is a specific focus on *Vensim* models through the DLL. This includes the use of *all* Vensim functions (depending on whether the DSS or PLE versions are installed) and features which are not available in other system dynamics simulation programs such as [Stella](http://www.iseesystems.com/softwares/Education/StellaSoftware.aspx), [Simulink](https://en.wikipedia.org/wiki/Simulink), [MapleSim](https://en.wikipedia.org/wiki/MapleSim), etc.
 
 ##Limitations
 
