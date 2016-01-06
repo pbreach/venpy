@@ -78,11 +78,11 @@ class VenPy(object):
             names = (ctypes.c_char * maxn)()
             self.dll.vensim_get_varnames('*', num, names, maxn)
             names = ''.join(list(names)[:-2]).split('\x00')
-            
+
             for n in names:
                 if n:
-                    self.vtype[n] = var 
-        
+                    self.vtype[n] = var
+
         #Set empty components dictionary
         self.components = {}
         #Set runname as none when no simulation has taken place
@@ -90,12 +90,12 @@ class VenPy(object):
 
 
     def __getitem__(self, key):
-        
+
         #Test for subcript type of string
         if self._is_subbed(key):
             #Get subscript element information
             var, elements, combos = self._get_sub_info(key)
-    
+
             if all(len(e)==1 for e in elements):
                 return self._getval(key)
 
@@ -104,7 +104,7 @@ class VenPy(object):
                 shape = map(len, elements)
                 #Get values of subscript combinations
                 values = map(self._getval, combos)
-                
+
                 return np.array(values).reshape(shape).squeeze()
 
         else:
@@ -140,7 +140,7 @@ class VenPy(object):
                     self._setval(c, v)
 
         else:
-            
+
             message = "Unsupported type '%s' passed to __setitem__ for Venim" \
                       "variable '%s'." % (type(val), key)
             raise TypeError(message)
@@ -212,7 +212,7 @@ class VenPy(object):
         """Get last model run results loaded into python. Specific variables
         can be retrieved using the `names` attribute, or all variables of a
         specific type can be returned using the `vtype` attribute.
-        
+
         All variables of type 'level', 'aux', and 'game' are returned by
         default.
 
@@ -239,37 +239,37 @@ class VenPy(object):
         #Make sure both kwargs are not set simultaneously
         assert not (names and vtype), "Only one of either 'names' or 'vtype'" \
         " can be set."
-        
+
         valid = set(['level', 'aux', 'game'])
-        
+
         if names:
             #Make sure all names specified are in the model
             assert all(n in self.vtype.keys() for n in names), "One or more " \
             "names are not defined in Vensim."
             #Ensure specified names are of the appropriate type
-            types = set([self.vtype[n] for n in names]) 
+            types = set([self.vtype[n] for n in names])
             assert valid >= types, "One or more names are not of type " \
             "'level', 'aux', or 'game'."
             varnames = names
-        
+
         elif vtype:
             #Make sure vtype is valid
             assert vtype in valid, "'vtype' must be 'level', 'aux', or 'game'."
             varnames = [n for n,v in self.vtype.iteritems() if v == vtype]
-        
+
         else:
             varnames = [n for n,v in self.vtype.iteritems() if v in valid]
-            
+
         if not varnames:
             raise Exception("No variables of specified type(s).")
 
         allvars = []
         for v in varnames:
             if self._is_subbed(v):
-                allvars += self._get_sub_info(v)[:-1]
+                allvars += [v + s for s in self._get_sub_elements([v])[0]]
             else:
                 allvars.append(v)
-                
+
         result = {}
 
         for v in allvars:
@@ -326,25 +326,25 @@ class VenPy(object):
         cmd = "SIMULATE>SETVAL|%s=%s" % (key, val)
         self.cmd(cmd)
 
-           
+
     def _get_sub_info(self, key):
         var, subs = self._get_subs(key)
         elements = self._get_sub_elements(subs)
         combos = [var + "[%s]" % ','.join(c) for c in product(*elements)]
         return var, elements, combos
- 
-  
+
+
     def _get_sub_elements(self, subs):
         elements = []
         for s in subs:
-            if self.vtype[s] == 'sub_range':
+            if self.vtype[s] != 'sub_constant':
                 maxn = self.dll.vensim_get_varattrib(s, 9, None, 0)
                 res = (ctypes.c_char * maxn)()
                 self.dll.vensim_get_varattrib(s, 9, res, maxn)
                 res = ''.join(list(res)[:-2]).split('\x00')
                 elements.append(res)
             else:
-                elements.append([s])               
+                elements.append([s])
         return elements
 
 
@@ -352,7 +352,7 @@ class VenPy(object):
         maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
         return False if maxn == 2 else True
 
-        
+
     def _get_subs(self, key):
         names = map(str.strip, re.findall(r'[\w|\s]+', key))
-        return names[0], names[1:]        
+        return names[0], names[1:]
