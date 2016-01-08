@@ -185,8 +185,8 @@ class VenPy(object):
 
                 #Run user defined function(s) at every step
                 for _ in range(initial, final, step):
-                    self.dll.vensim_start_simulation(0, 2, 1)
                     self._run_udfs()
+                    self.dll.vensim_start_simulation(0, 2, 1)
                     self.dll.vensim_continue_simulation(step)
                     self.dll.vensim_finish_simulation()
 
