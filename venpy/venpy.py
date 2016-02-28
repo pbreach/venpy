@@ -354,5 +354,5 @@ class VenPy(object):
 
 
     def _get_subs(self, key):
-        names = map(str.strip, re.findall(r'[\w|\s]+', key))
+        names = map(str.strip, re.findall(r'[^\[|^\]|^,]+', key))
         return names[0], names[1:]
