@@ -288,7 +288,7 @@ class VenPy(object):
 
             result[v] = np.array(vval)
 
-        return pd.DataFrame(result, index=np.array(tval).astype(int))
+        return pd.DataFrame(result, index=np.array(tval))
 
 
     def _run_udfs(self):
