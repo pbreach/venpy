@@ -59,8 +59,8 @@ class VenPy(object):
         try:
             self.dll = ctypes.windll.LoadLibrary(path)
         except Exception as e:
-            print e
-            print "'%s' could not be loaded using the path '%s'" % (dll, path)
+            print(e)
+            print("'%s' could not be loaded using the path '%s'" % (dll, path))
 
         #Load compiled vensim model
         self.cmd("SPECIAL>LOADMODEL|%s" % model)
@@ -191,8 +191,7 @@ class VenPy(object):
                     self.dll.vensim_finish_simulation()
 
             except Exception as e:
-                print e
-                print "Unexpected error in the simulation has occured."
+                print(e, "Unexpected error in the simulation has occured.")
 
 
     def cmd(self, cmd):
