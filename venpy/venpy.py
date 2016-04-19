@@ -39,7 +39,7 @@ class VenPy(object):
         bit, opsys = platform.architecture()
 
         #Filter numbers out of string
-        nums = lambda x: filter(str.isdigit, x)
+        nums = lambda x: "".join(xi for xi in x if str.isdigit(xi))
 
         #Assert same bitness of Python and Vensim
         assert nums(dll) == nums(bit), \
@@ -101,9 +101,9 @@ class VenPy(object):
 
             else:
                 #Get shape of resulting array
-                shape = map(len, elements)
+                shape = [len(e) for e in elements]
                 #Get values of subscript combinations
-                values = map(self._getval, combos)
+                values = [self._getval(c) for c in combos]
 
                 return np.array(values).reshape(shape).squeeze()
 
@@ -354,5 +354,5 @@ class VenPy(object):
 
 
     def _get_subs(self, key):
-        names = map(str.strip, re.findall(r'[^\[|^\]|^,]+', key))
+        names = [str.strip(i) for i in re.findall(r'[^\[|^\]|^,]+', key)]
         return names[0], names[1:]
