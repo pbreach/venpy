@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import numpy as np
+import sys
+
+sys.path.append("..")
 
 import venpy
-import numpy as np
 
 
 class TestGetSet(unittest.TestCase):
