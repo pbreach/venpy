@@ -370,3 +370,4 @@ def _c_char_to_list(res):
     
 def _prepstr(in_str):
     return in_str if isinstance(in_str, bytes) else in_str.encode('utf-8')
+    
