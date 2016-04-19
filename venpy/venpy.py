@@ -254,10 +254,10 @@ class VenPy(object):
         elif vtype:
             #Make sure vtype is valid
             assert vtype in valid, "'vtype' must be 'level', 'aux', or 'game'."
-            varnames = [n for n,v in self.vtype.iteritems() if v == vtype]
+            varnames = [n for n,v in self.vtype.items() if v == vtype]
 
         else:
-            varnames = [n for n,v in self.vtype.iteritems() if v in valid]
+            varnames = [n for n,v in self.vtype.items() if v in valid]
 
         if not varnames:
             raise Exception("No variables of specified type(s).")
