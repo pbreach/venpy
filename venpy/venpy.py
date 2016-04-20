@@ -39,7 +39,7 @@ class VenPy(object):
         bit, opsys = platform.architecture()
 
         #Filter numbers out of string
-        nums = lambda x: filter(str.isdigit, x)
+        nums = lambda X: "".join(x for x in X if str.isdigit(x))
 
         #Assert same bitness of Python and Vensim
         assert nums(dll) == nums(bit), \
@@ -59,8 +59,8 @@ class VenPy(object):
         try:
             self.dll = ctypes.windll.LoadLibrary(path)
         except Exception as e:
-            print e
-            print "'%s' could not be loaded using the path '%s'" % (dll, path)
+            print(e)
+            print("'%s' could not be loaded using the path '%s'" % (dll, path))
 
         #Load compiled vensim model
         self.cmd("SPECIAL>LOADMODEL|%s" % model)
@@ -73,11 +73,11 @@ class VenPy(object):
 
         self.vtype = {}
 
-        for num, var in types.iteritems():
-            maxn = self.dll.vensim_get_varnames('*', num, None, 0)
+        for num, var in types.items():
+            maxn = self.dll.vensim_get_varnames(b'*', num, None, 0)
             names = (ctypes.c_char * maxn)()
-            self.dll.vensim_get_varnames('*', num, names, maxn)
-            names = ''.join(list(names)[:-2]).split('\x00')
+            self.dll.vensim_get_varnames(b'*', num, names, maxn)
+            names = _c_char_to_list(names)
 
             for n in names:
                 if n:
@@ -101,9 +101,9 @@ class VenPy(object):
 
             else:
                 #Get shape of resulting array
-                shape = map(len, elements)
+                shape = [len(e) for e in elements]
                 #Get values of subscript combinations
-                values = map(self._getval, combos)
+                values = [self._getval(c) for c in combos]
 
                 return np.array(values).reshape(shape).squeeze()
 
@@ -191,8 +191,7 @@ class VenPy(object):
                     self.dll.vensim_finish_simulation()
 
             except Exception as e:
-                print e
-                print "Unexpected error in the simulation has occured."
+                print(e, "Unexpected error in the simulation has occured.")
 
 
     def cmd(self, cmd):
@@ -203,7 +202,7 @@ class VenPy(object):
         cmd : str
             Valid string command for Vensim DLL
         """
-        success = self.dll.vensim_command(cmd)
+        success = self.dll.vensim_command(_prepstr(cmd))
         if not success:
             raise Exception("Vensim command '%s' was not successful." % cmd)
 
@@ -255,10 +254,10 @@ class VenPy(object):
         elif vtype:
             #Make sure vtype is valid
             assert vtype in valid, "'vtype' must be 'level', 'aux', or 'game'."
-            varnames = [n for n,v in self.vtype.iteritems() if v == vtype]
+            varnames = [n for n,v in self.vtype.items() if v == vtype]
 
         else:
-            varnames = [n for n,v in self.vtype.iteritems() if v in valid]
+            varnames = [n for n,v in self.vtype.items() if v in valid]
 
         if not varnames:
             raise Exception("No variables of specified type(s).")
@@ -274,13 +273,13 @@ class VenPy(object):
 
         for v in allvars:
 
-            maxn = self.dll.vensim_get_data(self.runname, v, 'Time', None,
-                                            None, 0)
+            maxn = self.dll.vensim_get_data(_prepstr(self.runname), v, b'Time', 
+                                            None, None, 0)
             vval = (ctypes.c_float * maxn)()
             tval = (ctypes.c_float * maxn)()
 
-            success = self.dll.vensim_get_data(self.runname, v, 'Time',
-                                               vval, tval, maxn)
+            success = self.dll.vensim_get_data(_prepstr(self.runname), v, 
+                                               b'Time', vval, tval, maxn)
 
             if not success:
                 raise IOError("Could not retrieve data for '%s'" \
@@ -310,7 +309,7 @@ class VenPy(object):
         #Define ctypes single precision floating point number
         result = ctypes.c_float()
         #Store value based on key lookup in result
-        success = self.dll.vensim_get_val(key, ctypes.byref(result))
+        success = self.dll.vensim_get_val(_prepstr(key), ctypes.byref(result))
 
         if not success:
             raise KeyError("Unable to query value for '%s'." % key)
@@ -338,21 +337,37 @@ class VenPy(object):
         elements = []
         for s in subs:
             if self.vtype[s] != 'sub_constant':
-                maxn = self.dll.vensim_get_varattrib(s, 9, None, 0)
+                maxn = self.dll.vensim_get_varattrib(_prepstr(s), 9, None, 0)
                 res = (ctypes.c_char * maxn)()
-                self.dll.vensim_get_varattrib(s, 9, res, maxn)
-                res = ''.join(list(res)[:-2]).split('\x00')
-                elements.append(res)
+                self.dll.vensim_get_varattrib(_prepstr(s), 9, res, maxn)
+                elements.append(_c_char_to_list(res))
             else:
                 elements.append([s])
         return elements
 
 
     def _is_subbed(self, key):
-        maxn = self.dll.vensim_get_varattrib(key, 9, None, 0)
+        maxn = self.dll.vensim_get_varattrib(_prepstr(key), 9, None, 0)
         return False if maxn == 2 else True
 
 
     def _get_subs(self, key):
-        names = map(str.strip, re.findall(r'[^\[|^\]|^,]+', key))
+        names = [str.strip(i) for i in re.findall(r'[^\[|^\]|^,]+', key)]
         return names[0], names[1:]
+
+        
+def _c_char_to_list(res):        
+    names = []        
+    for r in list(res)[:-2]:
+        if isinstance(r, str):
+            names.append(r)
+        else:
+            names.append(r.decode('utf-8'))                
+    names = ''.join(names).split('\x00')
+    
+    return names
+
+    
+def _prepstr(in_str):
+    return in_str if isinstance(in_str, bytes) else in_str.encode('utf-8')
+    
