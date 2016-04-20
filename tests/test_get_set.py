@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import unittest
 import numpy as np
 import sys
@@ -100,16 +99,6 @@ class TestGetSetSub(unittest.TestCase):
         self.model['Init Coffee Temp[cup,room]'] = arr1
         arr2 = self.model['Init Coffee Temp[cup,room]']
         self.assertTrue(np.allclose(arr1, arr2))
-
-    def test_set_fully_subbed_with_array(self):
-        arr1 = np.array([100, 85, 70])
-        key = 'Init Coffee Temp[c1, r1]'
-        with self.assertRaises(AssertionError):
-            self.model[key] = arr1
-
-    def test_set_subbed_const_2range_with_const(self):
-        with self.assertRaises(TypeError):
-            self.model['Init Coffee Temp[cup,room]'] = 2
 
     def test_set_subbed_elements_mismatch(self):
         arr1 = np.array([100, 85, 70, 75, 60, 65])

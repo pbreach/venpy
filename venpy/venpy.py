@@ -273,12 +273,14 @@ class VenPy(object):
 
         for v in allvars:
 
-            maxn = self.dll.vensim_get_data(_prepstr(self.runname), v, b'Time', 
-                                            None, None, 0)
+            maxn = self.dll.vensim_get_data(_prepstr(self.runname), _prepstr(v), 
+                                            b'Time', None, None, 0)
+                                            
             vval = (ctypes.c_float * maxn)()
             tval = (ctypes.c_float * maxn)()
 
-            success = self.dll.vensim_get_data(_prepstr(self.runname), v, 
+            success = self.dll.vensim_get_data(_prepstr(self.runname), 
+                                               _prepstr(v), 
                                                b'Time', vval, tval, maxn)
 
             if not success:
