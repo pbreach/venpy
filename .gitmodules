@@ -1,3 +1,0 @@
-[submodule "venpy/models"]
-	path = venpy/models
-	url = git://github.com/SDXorg/test-models.git
