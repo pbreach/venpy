@@ -1,3 +1,0 @@
-[submodule "models/test-models"]
-	path = models/test-models
-	url = https://github.com/SDXorg/test-models.git
