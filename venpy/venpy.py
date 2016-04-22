@@ -146,7 +146,7 @@ class VenPy(object):
             raise TypeError(message)
 
 
-    def run(self, runname='Run', step=1):
+    def run(self, runname='Run', interval=1):
         """
         Run the loaded Vensim model.
 
@@ -155,43 +155,44 @@ class VenPy(object):
         runname : str, default 'Run'
             Label for model results. Use a different name for distinguishing
             output between multiple runs.
-        step : int, default 1
-            The number of time steps for which the user defined Python
-            functions (if any) will get/set model values throughout the Vensim
-            simulation.
-
+        interval : int, default 1
+            The number of time steps defining the interval for which the
+            control of the simulation is returned to the user defined functions
+            (if any). Communication occurs at the beginning of each interval.
         """
-        step = int(step)
         #Do not display any messages from Vensim
         self.dll.vensim_be_quiet(1)
         #Set simulation name before running
         self.runname = runname
-        self.cmd("SIMULATE>RUNNAME|%s" % self.runname)
+        self.cmd("SIMULATE>RUNNAME|%s" % runname)
 
         #Run entire simulation if no components are set
         if not self.components:
             self.cmd("MENU>RUN|O")
         else:
-            try:
-                #Run simulation step by step
-                initial = int(self.__getitem__("INITIAL TIME"))
-                final = int(self.__getitem__("FINAL TIME"))
+            #Run simulation step by step
+            initial = self.__getitem__("INITIAL TIME")
+            final = self.__getitem__("FINAL TIME")
+            dt = self.__getitem__("TIME STEP")
 
-                assert not (initial - final) % step, \
-                "total time steps are not divisible by step size of %d" % step
-
-                #Start the simulation
-                self.cmd("MENU>GAME|O")
-
-                #Run user defined function(s) at every step
-                for _ in range(initial, final, step):
-                    self._run_udfs()
-                    self.dll.vensim_start_simulation(0, 2, 1)
-                    self.dll.vensim_continue_simulation(step)
-                    self.dll.vensim_finish_simulation()
-
-            except Exception as e:
-                print(e, "Unexpected error in the simulation has occured.")
+            if (initial - final) % interval:
+                msg = "total time steps are not evenly divisible by interval."
+                raise ValueError(msg)
+            elif interval < dt:
+                raise ValueError("Interval should be greater than time step.")
+        
+            #Start the simulation
+            self.cmd("MENU>GAME|O")
+            self.cmd("GAME>GAMEINTERVAL|%s" % interval)
+            
+            step = interval if interval else dt 
+            
+            #Run user defined function(s) at every step
+            for t in np.arange(initial, final, step):
+                self._run_udfs()
+                self.cmd("GAME>GAMEON")
+                
+            self.cmd("GAME>ENDGAME")
 
 
     def cmd(self, cmd):

@@ -20,13 +20,13 @@ class TestResult(unittest.TestCase):
     
     def test_1d_result(self):
         model = venpy.load("../models/coffee_cup.vpm")
-        model.run()
+        model.run(runname="test_1d_result")
         result = model.result()['Coffee Temp'].values
         self.assertTrue(np.allclose(self.base1d, result))
             
     def test_2d_result(self):
         model = venpy.load("../models/sub_coffee_cup.vpm")
-        model.run()
+        model.run(runname="test_2d_result")
         result = model.result().filter(regex="Coffee Temp")
         self.assertTrue(np.allclose(self.base2d, result))
         
@@ -40,7 +40,7 @@ class TestResult(unittest.TestCase):
             return (ct - rt) / tc
             
         model['Cooling'] = cooling
-        model.run()
+        model.run(runname="test_pyfunc_result")
         result = model.result()['Coffee Temp'].values
         self.assertTrue(np.allclose(self.base1d, result))
         
