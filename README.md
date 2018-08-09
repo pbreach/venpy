@@ -5,7 +5,7 @@ Python Tools for Vensim
 
 This package provides a pure Python wrapper to the [Vensim system dynamics simulation software](http://vensim.com) through the Vensim DLL. The Vensim DLL provides the ability to develop interfaces for pre-existing models by allowing access to some of the tools and functions used in the software itself. 
 
-##Goals
+## Goals
 
 1. Provide easy access to existing Vensim functionality in Python. This will help to facilitate:
   * Batch processing of simulation runs under a range of exogenously driven scenarios, parameter sets, or events.
@@ -16,14 +16,14 @@ This package provides a pure Python wrapper to the [Vensim system dynamics simul
   * Easy integration of 3rd party Python libraries.
   * Ability to run multiple Vensim models simultaneously and exchange data between them.
  
-##Documentation
+## Documentation
 A guide for basic usage of VenPy is provided [here](https://github.com/pbreach/venpy/blob/master/docs/Basic%20Usage.ipynb)
 
-##Focus
+## Focus
 
 The goals of this project are very much in line with [PySD](https://github.com/JamesPHoughton/pysd) and is in no way a replacement for this effort. In this project there is a specific focus on *Vensim* models through the DLL. This includes the use of *all* Vensim functions (depending on whether the DSS or PLE versions are installed) and features which are not available in other system dynamics simulation programs such as [Stella](http://www.iseesystems.com/softwares/Education/StellaSoftware.aspx), [Simulink](https://en.wikipedia.org/wiki/Simulink), [MapleSim](https://en.wikipedia.org/wiki/MapleSim), etc.
 
-##Limitations
+## Limitations
 
 Due to the dependence on Vensim's DLL functionality there comes a set of limitations with the project which must be kept in mind:
 
@@ -35,7 +35,7 @@ Due to the dependence on Vensim's DLL functionality there comes a set of limitat
 * Potential compatibility issues with future versions of Vensim
 * Likely more to come...
 
-##Applications
+## Applications
 
 Although these limitations do exist, the Vensim DLL has been used in many successful applications to extend Vensim functionality. Some of these include the works of:
 
