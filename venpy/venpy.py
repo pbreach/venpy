@@ -9,6 +9,7 @@ from ctypes import util
 import platform
 import re
 from itertools import product
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -84,7 +85,7 @@ class VenPy(object):
                     self.vtype[n] = var
 
         #Set empty components dictionary
-        self.components = {}
+        self.components = OrderedDict()
         #Set runname as none when no simulation has taken place
         self.runname = None
 
